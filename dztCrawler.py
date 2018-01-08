@@ -13,25 +13,18 @@ import random
 import signal
 import sys
 from cookie_helper import *
+import db
+from constants import *
 
-username = '13926137542'
-password = 'a1532768'
-
-
-
-dzt_base_url = 'https://www.dianzhentan.com/'
-error_404_url = dzt_base_url +  'asdf/'
-shop_list_url = dzt_base_url + 'member/'
-file_url = dzt_base_url + 'member/items/all/73414042/?t=all&act=out&d=2018-01-02'
 
 #driver = webdriver.PhantomJS()
 driver = webdriver.Chrome()
 
 # 设置cookie。设置之前先必须get一个dummy page
-driver.get(error_404_url)
+driver.get(ERROR_404_URL)
 load_cookies(driver)
 
-driver.get(shop_list_url)
+driver.get(SHOP_LIST_URL)
 
 # 此处应该加入验证，确保已经登录成功
 import winsound
@@ -45,11 +38,15 @@ while True:
 
 eList = driver.find_elements_by_css_selector("table#shop-list-table tbody tr")
 
+shops = []
 for e in eList:
-    print e.get_attribute('data-shopid')
+    shop_id = e.get_attribute('data-shopid')
     a = e.find_element_by_css_selector('td.shop-name span a')
-    print a.get_attribute('href')
-    print a.text
+    link =  a.get_attribute('href')
+    name =  a.text
+    shops.append((name, link, shop_id))
+
+db.update_shops(shops)
 
 from dztLib import *
 while True:
@@ -60,7 +57,7 @@ while True:
     if c == 'd':
         dump_cookies(driver)
     if c == 'l':
-        download_file(driver)
+        download_files(driver)
     if c == "q":
         break
 
