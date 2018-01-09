@@ -15,7 +15,7 @@ import sys
 from cookie_helper import *
 import db
 from constants import *
-
+import csv_processor
 
 #driver = webdriver.PhantomJS()
 driver = webdriver.Chrome()
@@ -57,7 +57,7 @@ while True:
     if c == 'd':
         dump_cookies(driver)
     if c == 'l':
-        download_files(driver)
+        csv_processor.download_files(driver)
     if c == "q":
         break
 
