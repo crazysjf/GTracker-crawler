@@ -1,51 +1,63 @@
 # -*- coding: utf-8 -*-
+'''db的用法：
+按以下流程操作：
+    初始化：db.init()
+    数据库操作
+    结束：db.finishi()
+    
+调用finish()的时候会自动提交数据库。
+操作中途如果希望提交，可以调用db.commit().
+'''
 import sqlite3 as lite
+# db模块的用法
 
 db_name = "data.db"
 
-def migrate():
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS Shops(Id INTEGER PRIMARY KEY, Name TEXT, Link TEXT, ShopId TEXT NOT NULL, CreationDate DATETIME DEFAULT (datetime('now', 'localtime')))")
-        cur.execute("CREATE TABLE IF NOT EXISTS Goods(Id INTEGER PRIMARY KEY, Name TEXT, Link TEXT, ShopId TEXT NOT NULL, CreationDate DATETIME DEFAULT (datetime('now', 'localtime')))")
-        cur.execute("CREATE TABLE IF NOT EXISTS Records(Id INTEGER PRIMARY KEY, Name TEXT, Link TEXT, ShopId TEXT NOT NULL, CreationDate DATETIME DEFAULT (datetime('now', 'localtime')))")
+con = None
+cur = None
 
+
+def init(db_path = None):
+    '''初始化
+    db_path:data.db所在目录，如果没有则为当前工作目录。
+    '''
+    global con, cur, db_name
+    if db_path != None:
+        db_name = db_path + db_name
+    con = lite.connect(db_name)
+    cur = con.cursor()
+
+def commit():
+    con.commit()
+
+def finish():
+    con.commit()
+    con.close()
 
 # 更新店铺信息，对于已存在的店铺不进行处理
 # shops格式:((名称，链接，店铺id)
 def update_shops(shops):
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        for shop in shops:
-            print shop[2]
-            cur.execute("SELECT COUNT(*) FROM Shops WHERE ShopId=?", (shop[2],))
-            # 如果记录不存在就插入
-            if cur.fetchone()[0] == 0:
-                cur.execute("INSERT INTO Shops(Name, Link, ShopId) VALUES(?,?,?)", shop)
+    for shop in shops:
+        print shop[2]
+        cur.execute("SELECT COUNT(*) FROM Shops WHERE ShopId=?", (shop[2],))
+        # 如果记录不存在就插入
+        if cur.fetchone()[0] == 0:
+            cur.execute("INSERT INTO Shops(Name, Link, ShopId) VALUES(?,?,?)", shop)
 
 
 
 def get_all_shops():
-    con = lite.connect(db_name)
-    rows = None
-    with con:
-        cur = con.cursor()
-        cur.execute("SELECT * FROM Shops")
-        rows = cur.fetchall()
+    cur.execute("SELECT * FROM Shops")
+    rows = cur.fetchall()
 
     return rows
 
 def good_exists(good_id):
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        cur.execute('select * from goods where GoodId = ?', (good_id,))
-        if cur.fetchone() == None:
-            return False
-        else:
-            return True
+    cur.execute('select * from goods where GoodId = ?', (good_id,))
+    if cur.fetchone() == None:
+        return False
+    else:
+        return True
 
 def insert_good(good):
     '''
@@ -53,29 +65,49 @@ def insert_good(good):
     :param good: 格式：(Name, ShopId, GoodId, CreationDate) 
     :return: 
     '''
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate) VALUES(?,?,?,?)", good)
+    cur = con.cursor()
+    cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate) VALUES(?,?,?,?)", good)
 
 def record_exists(good_id, date):
     '''判断某店铺某天的数据是否存在'''
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        cur.execute("select * from records where GoodId=? and date=?", (good_id, date))
-        if cur.fetchone() == None:
-            return False
-        else:
-            return True
+    cur.execute("select * from records where GoodId=? and date=?", (good_id, date))
+    if cur.fetchone() == None:
+        return False
+    else:
+        return True
 
 def insert_record(r):
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        cur.execute("INSERT INTO Records(date, GoodId, sales_30, fav_cnt, view_cnt, review_cnt) VALUES(?,?,?,?,?,?)", r)
+    cur.execute("INSERT INTO Records(date, GoodId, sales_30, fav_cnt, view_cnt, review_cnt) VALUES(?,?,?,?,?,?)", r)
 
 
+def get_records(date, good_id = None):
+    param = [date]
+    sql = 'select * from records where date=?'
+    if good_id != None:
+        sql += ' and GoodId=?'
+        param.append(good_id)
+    cur.execute(sql, param)
+    r = cur.fetchall()
+    return r
+
+def get_records2(date, shop_id):
+    sql = '''select r.*, s.Name from Records r, Goods g, Shops s where
+                r.GoodId = g.GoodId and
+                g.ShopId = s.ShopId and
+                r.date = ? and
+                s.ShopId = ?'''
+    cur.execute(sql, (date, shop_id))
+    r = cur.fetchall()
+    return r
+
+def get_records3(shop_id):
+    sql = '''select r.GoodId, r.sales_30 from Records r, Goods g, Shops s where
+                r.GoodId = g.GoodId and
+                g.ShopId = s.ShopId and
+                s.ShopId = ?'''
+    cur.execute(sql, (shop_id,))
+    r = cur.fetchall()
+    return r
 
 if __name__ == '__main__':
     good_exists('123')

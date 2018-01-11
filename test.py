@@ -46,5 +46,9 @@ import sys
 #
 #
 
-for d in range(0, 30):
-    print d
+a = 3
+def f():
+    a = 2
+    print a
+f()
+print a

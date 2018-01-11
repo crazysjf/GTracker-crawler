@@ -80,7 +80,11 @@ def import_to_db(shop_id, date, file):
         if i == 0:
             continue
         # 所有元素解码
-        _row = map(lambda x: x.decode('GB2312'), row)
+        try:
+            _row = map(lambda x: x.decode('GB2312'), row)
+        except Exception,e:
+            print e
+
         title = _row[2]
         link = _row[3]
         creation_time = _row[4]
@@ -104,6 +108,19 @@ def import_to_db(shop_id, date, file):
             db.insert_record(r)
 
 if __name__ == "__main__":
-    csv_file = CSV_DIR + '33531012-2017-12-10.csv'
-    date = date(2017,12,10)
-    import_to_db('33531012', '2017-12-10', csv_file)
+    #csv_file = CSV_DIR + '33531012-2017-12-10.csv'
+    #date = date(2017,12,10)
+    #print date
+    #import_to_db('33531012', '2017-12-10', csv_file)
+    #print db.record_exists('560490837698', date)
+    files =  os.listdir(CSV_DIR)
+    p = re.compile(r'([0-9]*)-([0-9,-]*).csv')
+    db.init()
+    for f in files:
+        m = p.match(f)
+        shop_id =  m.group(1)
+        date = datetime.strptime(m.group(2), '%Y-%m-%d').date()
+        import_to_db(shop_id, date, CSV_DIR + f)
+        print 'imported: ' + f
+        db.commit()
+    db.finish()

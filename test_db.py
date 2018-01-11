@@ -1,16 +1,34 @@
 # -*- coding: utf-8 -*-
 import sqlite3 as lite
 import sys
+from datetime import date
+import numpy as np
+import matplotlib.pyplot as plt
 
-db_name = "data.db"
+import db
 
-def migrate():
-    con = lite.connect(db_name)
-    with con:
-        cur = con.cursor()
-        #cur.execute("CREATE TABLE if not exists Shops2(Id INTEGER PRIMARY KEY, Name TEXT, Link TEXT, ShopId TEXT NOT NULL, CreationDate DATETIME DEFAULT (datetime('now', 'localtime')))")
-        #cur.execute('''insert into Shops2 select * from Shops''')
-        cur.execute('''CREATE TABLE if not exists Goods(Id INTEGER PRIMARY KEY, Name TEXT, ShopId TEXT NOT NULL, GoodId integer not null, CreationDate DATETIME)''')
-        cur.execute('''CREATE TABLE if not exists Records(Id INTEGER PRIMARY KEY, date datetime not null, GoodId TEXT NOT NULL, sales_30 integer, fav_cnt integer, view_cnt integer, review_cnt integer)''')
+db.init()
 
-migrate()
+rows = db.get_records2(date(2018,1,1), '162545180')
+for i, r in enumerate(rows):
+    #_r = map(lambda x: x.decode('GB2312'), r)
+    print i, r[0:-1], r[-1]
+
+
+x = [1, 2, 3, 4, 5]
+y1 = [1, 1, 2, 3, 5]
+y2 = [0, 4, 2, 6, 8]
+y3 = [1, 3, 5, 7, 9]
+
+y = np.vstack([y1, y2, y3])
+
+labels = ["Fibonacci ", "Evens", "Odds"]
+
+fig, ax = plt.subplots()
+ax.stackplot(x, y1, y2, y3, labels=labels)
+ax.legend(loc=2)
+plt.show()
+
+fig, ax = plt.subplots()
+ax.stackplot(x, y)
+plt.show()
