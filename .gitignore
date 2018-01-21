@@ -6,3 +6,4 @@
 *.xls
 *.db
 collectedstatic/
+*.db-journal

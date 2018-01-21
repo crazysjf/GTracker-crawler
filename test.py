@@ -45,10 +45,8 @@ import sys
 #     print row
 #
 #
+from datetime import date, datetime, timedelta
+t = date.today()   # 仅获取日期
+d = timedelta(30)
+print t -d
 
-a = 3
-def f():
-    a = 2
-    print a
-f()
-print a

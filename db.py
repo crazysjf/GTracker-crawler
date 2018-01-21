@@ -10,6 +10,7 @@
 '''
 import sqlite3 as lite
 # db模块的用法
+from datetime import date, datetime, timedelta
 
 db_name = "data.db"
 
@@ -100,12 +101,36 @@ def get_records2(date, shop_id):
     r = cur.fetchall()
     return r
 
-def get_records3(shop_id):
+def get_records3(shop_id, start_date=None, end_date=None):
     sql = '''select r.GoodId, r.sales_30 from Records r, Goods g, Shops s where
                 r.GoodId = g.GoodId and
                 g.ShopId = s.ShopId and
                 s.ShopId = ?'''
     cur.execute(sql, (shop_id,))
+    r = cur.fetchall()
+    return r
+
+def get_records_with_shop_id_in_date_range(shop_id, start_date=None, end_date=None):
+    '''
+    
+    :param shop_id: 
+    :param start_date: 开始日期，不指定则为30天前
+    :param end_date: 结束日期，不指定则为当天
+    :return: [good_id, r.date, r.sales_30
+    '''
+    if start_date == None:
+        start_date = date.today() - timedelta(30)
+
+    if end_date == None:
+        end_date = date.today()
+
+    sql = '''select r.GoodId, r.date, r.sales_30 from Records r, Goods g, Shops s where
+                r.GoodId = g.GoodId and
+                g.ShopId = s.ShopId and
+                s.ShopId = ? and
+                r.date >= ? and
+                r.date <= ?'''
+    cur.execute(sql, (shop_id, start_date, end_date))
     r = cur.fetchall()
     return r
 
