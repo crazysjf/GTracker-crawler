@@ -7,3 +7,6 @@
 *.db
 collectedstatic/
 *.db-journal
+*.log
+*.jpg
+.*
