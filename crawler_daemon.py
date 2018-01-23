@@ -5,7 +5,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SocketServer import ThreadingMixIn
 class ThreadXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):pass
 from multiprocessing import Process
-from dzt_crawler import DztCrawler
+from network.dzt_crawler import DztCrawler
 
 
 class CrawlerServer:

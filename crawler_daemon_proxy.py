@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from crawler_server import *
+from crawler_daemon import *
 import xmlrpc.client
 
 class CrawlerServerProxy:

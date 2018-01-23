@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import subprocess
 import time
-print subprocess.Popen("python crawler_server.py",close_fds=True)
-#time.sleep(30)
+import os
+
+
+p =  os.path.abspath(__file__)
+print os.path.dirname(p)

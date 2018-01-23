@@ -4,26 +4,30 @@
 # 导出按钮的链接例子：https://www.dianzhentan.com/member/items/all/73414042/?t=all&act=out&d=2018-01-01
 # 格式应该为：https://www.dianzhentan.com/member/items/all/<店铺ID>?/t=all&act=out&d=<日期>
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-
-import time
+import base64
+import os
 import random
 import signal
 import sys
-from cookie_helper import *
-import db
-from constants import *
-import csv_processor
+import time
 import winsound
-import base64
-import os
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from urlparse import urlparse
 
-NEED_LOG_IN_FLAG_FILE = ".need_log_in"
+from db import db, csv_processor
+from misc.constants import *
+import pickle
+import urllib2
+
+dir = os.path.dirname(os.path.abspath(__file__))
+COOKIE_FILE                 = os.path.join(dir, "cookies.pkl")
+NEED_LOG_IN_FLAG_FILE       = os.path.join(dir, ".need_log_in")
+CSV_DIR                     = os.path.join(dir, 'csv/')
+
 class DztCrawler:
     '''
     爬虫实例。
@@ -56,7 +60,7 @@ class DztCrawler:
         self.driver = webdriver.Chrome()
         # 设置cookie。设置之前先必须get一个dummy page
         self.driver.get(ERROR_404_URL)
-        load_cookies(self.driver)
+        self.load_cookies()
 
     def __del__(self):
         self.finish()
@@ -103,6 +107,7 @@ class DztCrawler:
             if u"用户登陆" in self.driver.title:
                 time.sleep(1)
             else:
+                self.dump_cookies()
                 return True
         return False
 
@@ -134,7 +139,7 @@ class DztCrawler:
             return None
 
     def finish(self):
-        dump_cookies(self.driver)
+        self.dump_cookies()
         self.driver.quit()
 
     def crawl_shops(self, shops):
@@ -150,6 +155,7 @@ class DztCrawler:
             shops.append((name, link, shop_id))
 
         db.update_shops(shops)
+
 
     @staticmethod
     def _is_same_path(p1, p2):
@@ -168,8 +174,50 @@ class DztCrawler:
             return False
 
 
+    CSV_DIR = 'csv/'
+    file_url_pattern = DZT_BASE_URL + 'member/items/all/%s/?t=all&act=out&d=%s'
+    def download_a_csv(self, shop_id, date_str):
+        '''下载单个文件。调用的时候必须保证登录成功。
+        成功返回文件的绝对路径。
+        失败返回None。
+        data_str: 日期，形式：yyyy-mm-dd，必须要用字符串表示，否则无法通过rpc传输'''
+        driver = self.driver
+        cookies = [item["name"] + "=" + item["value"] for item in driver.get_cookies()]
+        cookiestr = ';'.join(item for item in cookies)
+
+        file_url = self.file_url_pattern % (shop_id, date_str)
+        headers = {'cookie':cookiestr}
+        req = urllib2.Request(file_url, headers = headers)
+        try:
+            response = urllib2.urlopen(req)
+            text = response.read()
+
+            file_name = CSV_DIR + shop_id + '-' + date_str + '.csv'
+            fd = open(file_name, 'w')
+            fd.write(text)
+            fd.close()
+            print '###get %s success!!' % file_name
+            return os.path.join(dir, file_name)
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
+
+    def load_cookies(self):
+        if os.path.exists(COOKIE_FILE):
+            cookies = pickle.load(open(COOKIE_FILE, "rb"))
+            for cookie in cookies:
+                self.driver.add_cookie(cookie)
+
+    # 保存cookie
+    def dump_cookies(self):
+        c = self.driver.get_cookies()
+        pickle.dump(c, open(COOKIE_FILE, "wb"))
+
+    def _print_cookies(self):
+        cookie = "; ".join([item["name"] + "=" + item["value"] + "\n" for item in self.driver.get_cookies()])
+        print cookie
+
     def console(self):
-        from dztLib import *
         while True:
             s = raw_input("Enter your input: ")
             l = s.split()
@@ -183,7 +231,7 @@ class DztCrawler:
                 print urlparse(self.driver.current_url)
                 #print_cookies(driver)
             if c == 'd':
-                dump_cookies(driver)
+                print self.download_a_csv('63359486', '2017-12-23')
             if c == 'l':
                 csv_processor.download_files(driver)
             if c == 'i':
