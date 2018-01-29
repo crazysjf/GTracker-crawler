@@ -6,7 +6,7 @@ import os
 import re
 from datetime import datetime, timedelta, date
 
-import db
+from db import DB
 from misc.constants import *
 
 # CSV_DIR = 'csv/'
@@ -33,21 +33,21 @@ from misc.constants import *
 #         print("Unexpected error:", sys.exc_info()[0])
 #         raise
 
-def download_files(driver):
-    '''下载所有文件'''
-    if not os.path.exists(CSV_DIR):
-        os.makedirs(CSV_DIR)
-
-    shops = db.get_all_shops()
-
-    for shop in shops:
-        now = datetime.now()
-        for d in range(1,30):
-            delta = timedelta(days=d)
-            t = now - delta
-            date_str = t.strftime("%Y-%m-%d")
-
-            download_one_file(driver, shop[3], date_str)
+# def download_files(driver):
+#     '''下载所有文件'''
+#     if not os.path.exists(CSV_DIR):
+#         os.makedirs(CSV_DIR)
+#
+#     shops = db.get_all_shops()
+#
+#     for shop in shops:
+#         now = datetime.now()
+#         for d in range(1,30):
+#             delta = timedelta(days=d)
+#             t = now - delta
+#             date_str = t.strftime("%Y-%m-%d")
+#
+#             download_one_file(driver, shop[3], date_str)
 
 def to_int(str):
     '''把str转为整数。如果成功返回整数，否则返回None'''
@@ -71,7 +71,7 @@ def import_to_db(shop_id, date, file):
     date: datetime.date对象
     '''
     csv_reader = csv.reader(open(file, 'rb'))
-
+    db = DB()
     for i, row in enumerate(csv_reader):
         if i == 0:
             continue
@@ -102,7 +102,9 @@ def import_to_db(shop_id, date, file):
         if not db.record_exists(good_id, date):
             r = (date, good_id, sales_30, fav_cnt, view_cnt, review_cnt)
             db.insert_record(r)
+    db.commit()
 
+    
 if __name__ == "__main__":
     #csv_file = CSV_DIR + '33531012-2017-12-10.csv'
     #date = date(2017,12,10)
