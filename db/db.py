@@ -51,7 +51,7 @@ class DB:
 
 
     def get_all_shops(self):
-        self.cur.execute("SELECT * FROM Shops")
+        self.cur.execute("SELECT name, shopid, link FROM Shops")
         rows = self.cur.fetchall()
 
         return rows
@@ -63,13 +63,18 @@ class DB:
         else:
             return True
 
+    def get_good_info(self, good_id):
+        self.cur.execute('select Name, CreationDate from goods where GoodId = ?', (good_id,))
+        r = self.cur.fetchone()
+        return r
+
     def insert_good(self, good):
         '''
         插入商品
         :param good: 格式：(Name, ShopId, GoodId, CreationDate) 
         :return: 
         '''
-        self.cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate) VALUES(?,?,?,?)", good)
+        self.cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate, Link) VALUES(?,?,?,?)", good)
 
     def record_exists(self, good_id, date):
         '''判断某店铺某天的数据是否存在'''
@@ -103,7 +108,7 @@ class DB:
         r = self.cur.fetchall()
         return r
 
-    def get_records3(shop_id, start_date=None, end_date=None):
+    def get_records3(self, shop_id, start_date=None, end_date=None):
         sql = '''select r.GoodId, r.sales_30 from Records r, Goods g, Shops s where
                     r.GoodId = g.GoodId and
                     g.ShopId = s.ShopId and

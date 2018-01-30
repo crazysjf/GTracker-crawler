@@ -82,21 +82,21 @@ def import_to_db(shop_id, date, file):
             print e
 
         title = _row[2]
-        link = _row[3]
+        good_link = _row[3]
         creation_time = _row[4]
         view_cnt    = to_int(_row[6])
         fav_cnt     = to_int(_row[10])
         review_cnt  = to_int(_row[11])
         sales_30    = to_int(_row[12])
 
-        good_id = get_good_id(link)
+        good_id = get_good_id(good_link)
         # good_id没有就什么都不用做了
         if good_id == None:
             # 此处需要error log
             continue
 
         if not db.good_exists(good_id):
-            good = (title, shop_id, good_id, creation_time)
+            good = (title, shop_id, good_id, creation_time, good_link)
             db.insert_good(good)
 
         if not db.record_exists(good_id, date):
