@@ -77,9 +77,10 @@ def import_to_db(shop_id, date, file):
             continue
         # 所有元素解码
         try:
-            _row = map(lambda x: x.decode('GB2312'), row)
+            _row = map(lambda x: x.decode('gb18030'), row)
         except Exception,e:
-            print e
+            print "row ", i, e
+            continue
 
         title = _row[2]
         good_link = _row[3]
@@ -96,7 +97,7 @@ def import_to_db(shop_id, date, file):
             continue
 
         if not db.good_exists(good_id):
-            good = (title, shop_id, good_id, creation_time, good_link)
+            good = (title, shop_id, good_id, creation_time)
             db.insert_good(good)
 
         if not db.record_exists(good_id, date):
@@ -104,21 +105,23 @@ def import_to_db(shop_id, date, file):
             db.insert_record(r)
     db.commit()
 
-    
-if __name__ == "__main__":
-    #csv_file = CSV_DIR + '33531012-2017-12-10.csv'
-    #date = date(2017,12,10)
-    #print date
-    #import_to_db('33531012', '2017-12-10', csv_file)
-    #print db.record_exists('560490837698', date)
-    files =  os.listdir(CSV_DIR)
+def import_files_in_dir(dir):
+    files =  os.listdir(dir)
     p = re.compile(r'([0-9]*)-([0-9,-]*).csv')
-    db.init()
+    db = DB()
     for f in files:
         m = p.match(f)
         shop_id =  m.group(1)
         date = datetime.strptime(m.group(2), '%Y-%m-%d').date()
-        import_to_db(shop_id, date, CSV_DIR + f)
+        import_to_db(shop_id, date, dir + f)
         print 'imported: ' + f
         db.commit()
     db.finish()
+
+if __name__ == "__main__":
+
+    t1 = datetime.now()
+    f = '/Users/sunjinfei/working_notes/20160816-GTracker-taobao-data-analyzer/src/GTracker-crawler/network/csv/110471204-2018-01-27.csv'
+    import_to_db('110471204', date(2018,1,27), f)
+    t2 = datetime.now()
+    print t2 - t1

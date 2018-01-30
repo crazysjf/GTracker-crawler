@@ -16,15 +16,19 @@ import os
 
 dir = os.path.dirname(os.path.abspath(__file__))
 
+# 默认日期范围
+START_DATE = date.today() - timedelta(constants.DATE_RANGE)
+END_DATE   = date.today() - timedelta(1)
+
 class DB:
     db_name = os.path.join(dir, "data.db")
 
-    def __init__(self, db_path = None):
+    def __init__(self, db = None):
         '''初始化
-        db_path:data.db所在目录，如果没有则为当前工作目录。
+        db_file:db文件，如果不指定则为当前目录下的data.db
         '''
-        if db_path != None:
-            self.db_name = db_path + self.db_name
+        if db != None:
+            self.db_name = db
         self.con = lite.connect(self.db_name)
         self.cur = self.con.cursor()
 
@@ -64,7 +68,7 @@ class DB:
             return True
 
     def get_good_info(self, good_id):
-        self.cur.execute('select Name, CreationDate from goods where GoodId = ?', (good_id,))
+        self.cur.execute('select Name, id, CreationDate from goods where GoodId = ?', (good_id,))
         r = self.cur.fetchone()
         return r
 
@@ -74,7 +78,7 @@ class DB:
         :param good: 格式：(Name, ShopId, GoodId, CreationDate) 
         :return: 
         '''
-        self.cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate, Link) VALUES(?,?,?,?)", good)
+        self.cur.execute("INSERT INTO Goods(Name, ShopId, GoodId, CreationDate) VALUES(?,?,?,?)", good)
 
     def record_exists(self, good_id, date):
         '''判断某店铺某天的数据是否存在'''
@@ -126,12 +130,12 @@ class DB:
         :return: [good_id, r.date, r.sales_30
         '''
         if start_date == None:
-            start_date = utils.start_date
+            start_date = START_DATE
 
         if end_date == None:
-            end_date = utils.end_date
+            end_date = END_DATE
 
-        sql = '''select r.GoodId, r.date, r.sales_30 from Records r, Goods g, Shops s where
+        sql = '''select r.GoodId, r.date, r.sales_30, g.name from Records r, Goods g, Shops s where
                     r.GoodId = g.GoodId and
                     g.ShopId = s.ShopId and
                     s.ShopId = ? and
@@ -158,7 +162,7 @@ class DB:
         result = {}
         for (shop_id, _, _) in _all_shops:
             for d in range(0, constants.DATE_RANGE):
-                date = utils.start_date + timedelta(d)
+                date = START_DATE + timedelta(d)
                 sql = '''select count(*) from Records r, Goods g, Shops s where
                             r.GoodId = g.GoodId and
                             g.ShopId = s.ShopId and
@@ -176,4 +180,8 @@ class DB:
 
 
 if __name__ == '__main__':
-    print DB('../').good_exists('123')
+    db = DB()
+    shops = db.shops_needed_to_crawl()
+    for s in shops.keys():
+        print s
+        print shops[s]
