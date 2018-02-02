@@ -7,6 +7,8 @@ import re
 from datetime import datetime, timedelta, date
 
 from db import DB
+import sqlite3
+
 from misc.constants import *
 
 # CSV_DIR = 'csv/'
@@ -66,12 +68,12 @@ def get_good_id(link):
         return m.group(1)
 
 
-def import_to_db(shop_id, date, file):
+def import_to_db(shop_id, date, file, db_file=None):
     '''将csv文件导入数据库.
     date: datetime.date对象
     '''
     csv_reader = csv.reader(open(file, 'rb'))
-    db = DB()
+    db = DB(db_file)
     for i, row in enumerate(csv_reader):
         if i == 0:
             continue
@@ -96,19 +98,28 @@ def import_to_db(shop_id, date, file):
             # 此处需要error log
             continue
 
-        if not db.good_exists(good_id):
+        # 重复数据不用每次判断，直接插入，可以大幅提高性能
+        # 如果重复会抛出IntegrityError异常，直接忽略即可。
+        try:
+            # if not db.good_exists(good_id):
             good = (title, shop_id, good_id, creation_time)
             db.insert_good(good)
+        except sqlite3.IntegrityError as e:
+            pass
 
-        if not db.record_exists(good_id, date):
+        try:
+            #if not db.record_exists(good_id, date):
             r = (date, good_id, sales_30, fav_cnt, view_cnt, review_cnt)
             db.insert_record(r)
+        except sqlite3.IntegrityError as e:
+            pass
+
     db.commit()
 
-def import_files_in_dir(dir):
+def import_files_in_dir(dir, db_file=None):
     files =  os.listdir(dir)
     p = re.compile(r'([0-9]*)-([0-9,-]*).csv')
-    db = DB()
+    db = DB(db_file)
     for f in files:
         m = p.match(f)
         shop_id =  m.group(1)
@@ -119,9 +130,4 @@ def import_files_in_dir(dir):
     db.finish()
 
 if __name__ == "__main__":
-
-    t1 = datetime.now()
-    f = '/Users/sunjinfei/working_notes/20160816-GTracker-taobao-data-analyzer/src/GTracker-crawler/network/csv/110471204-2018-01-27.csv'
-    import_to_db('110471204', date(2018,1,27), f)
-    t2 = datetime.now()
-    print t2 - t1
+    pass

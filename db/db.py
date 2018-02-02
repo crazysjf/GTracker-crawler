@@ -20,7 +20,15 @@ dir = os.path.dirname(os.path.abspath(__file__))
 START_DATE = date.today() - timedelta(constants.DATE_RANGE)
 END_DATE   = date.today() - timedelta(1)
 
-class DB:
+class Singleton(object):
+    _instance = None
+    def __new__(cls, *args, **kw):
+        if not cls._instance:
+            cls._instance = super(Singleton, cls).__new__(cls, *args, **kw)
+        return cls._instance
+
+
+class DB(Singleton):
     db_name = os.path.join(dir, "data.db")
 
     def __init__(self, db = None):
@@ -71,6 +79,16 @@ class DB:
         self.cur.execute('select Name, id, CreationDate from goods where GoodId = ?', (good_id,))
         r = self.cur.fetchone()
         return r
+
+    def get_all_goods_with_empty_main_pic(self):
+        self.cur.execute('select goodid from goods where mainpic isNull')
+        r = self.cur.fetchall()
+        return r
+
+    def good_update_main_pic(self, good_id, main_pic):
+        self.cur.execute('update goods set mainPic=? where goodId=?', (main_pic, good_id))
+
+
 
     def insert_good(self, good):
         '''
